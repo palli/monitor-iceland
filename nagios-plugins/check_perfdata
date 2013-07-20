@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+import re
+import requests
+from pynag.Parsers import mk_livestatus
+from pynag.Utils import PerfData
+from pynag.Plugins import PluginHelper, ok, warning, critical, unknown
+
+helper = PluginHelper()
+
+
+# Optionally specify some arguments
+helper.parser.add_option("--service", help="Regex for the metric in the form of hostname,service description,perfdata label", dest="services",default=[], action="append")
+helper.parser.add_option("--show-metrics-in-perfdata", help="Print every metric as a perfdata", dest="show_all_perfdata",default=False, action="store_true")
+helper.parser.add_option("--show-metrics-in-long", help="Print every metric to long_output", dest="metrics_to_long_output",default=False, action="store_true")
+helper.parse_arguments()
+
+livestatus = mk_livestatus()
+
+# Get the perfdata for all services
+livestatus_results = livestatus.get_services('Columns: host_name description perf_data')
+
+service_metrics = {}
+
+# Turn each perfdata in a list of the form host,service,metric
+for i in livestatus_results:
+  perfdata = PerfData(i.get('perf_data'))
+  # Create one entry for every perfdata metric
+  for perf in perfdata.metrics:
+    name = "%s,%s,%s" % (i.get('host_name'),i.get('description'), perf.label)
+    service_metrics[name] = perf
+
+
+values = []
+uoms = []
+for i in helper.options.services:
+  for k, v in service_metrics.items():
+    if not re.match(i, k):
+      continue
+    value = v.value
+    uom = v.uom
+    if uom not in uoms:
+      uoms.append(uom)
+    values.append(float(value))
+    if helper.options.metrics_to_long_output:
+      helper.add_long_output("* %s: %s" % (k,v))
+    if helper.options.show_all_perfdata:
+      helper.add_metric(label=k.replace(',','_'),value=value,uom=uom)
+    #print "Matching regex %s with %s" % (i,k)
+    
+
+# Check logic starts here
+helper.status(ok)
+helper.add_summary("%s metrics collected" % len(values))
+helper.add_metric("number_of_metrics", len(values))
+if values:
+  average_value = sum(values) / float(len(values))
+  max_value = max(values)
+  min_value = min(values)
+  if len(uoms) == 1: # All metrics have same uom
+    uom = uoms[0]
+  else:
+    uom = None
+  helper.add_metric("average_value", average_value,uom=uom)
+  helper.add_metric("max_value", max_value,uom=uom)
+  helper.add_metric("min_value", min_value,uom=uom)
+# Exit boilerplate
+helper.check_all_metrics()
+helper.exit()

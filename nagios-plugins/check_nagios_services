@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+# Checks one or more nagios services via mk livestatus
+# And returns availability numbers via perfdata
+
+import re
+import requests
+from pynag.Parsers import mk_livestatus
+from pynag.Utils import PerfData
+from pynag.Plugins import PluginHelper, ok, warning, critical, unknown
+
+helper = PluginHelper()
+
+
+# Optionally specify some arguments
+helper.parser.add_option("--service", help="Regex for the metric in the form of hostname,service description", dest="services",default=[], action="append")
+helper.parser.add_option("--show-metrics-in-perfdata", help="Print every metric as a perfdata", dest="show_all_perfdata",default=False, action="store_true")
+helper.parser.add_option("--show-metrics-in-long", help="Print every metric to long_output", dest="metrics_to_long_output",default=False, action="store_true")
+helper.parse_arguments()
+
+livestatus = mk_livestatus()
+
+# Get the perfdata for all services
+livestatus_results = livestatus.get_services('Columns: host_name description state')
+
+service_metrics = {}
+
+for i in livestatus_results:
+  name = "%s,%s" % (i.get('host_name'),i.get('description'))
+  service_metrics[name] = i
+
+
+states = {}
+states[0] = 0
+states[1] = 0
+states[2] = 0
+states[3] = 0
+states['all'] = 0
+for i in helper.options.services:
+  for k, v in service_metrics.items():
+    if not re.match(i, k):
+      continue
+    state = v.get('state',3)
+    states[state] += 1
+    states['all'] += 1
+    
+
+helper.status(ok)
+helper.add_summary("%s matches for service regex filter" % states['all'])
+helper.add_metric("services_ok", states[0])
+helper.add_metric("services_warning", states[1])
+helper.add_metric("services_critical", states[2])
+helper.add_metric("services_unknown", states[3])
+helper.add_metric("services_total", states['all'])
+
+# 
+availability = states[0] / float(states['all']) * 100
+availability = '%.2f' % availability
+helper.add_metric("service_availability", availability,uom='%')
+
+# Exit boilerplate
+helper.check_all_metrics()
+helper.exit()

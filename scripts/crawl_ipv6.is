@@ -1,0 +1,69 @@
+#!/usr/bin/env
+
+import requests
+import BeautifulSoup
+import okconfig
+import pynag.Model
+
+html = requests.get('http://ipv6.is/en/vefsidur/').content
+soup = BeautifulSoup.BeautifulSoup(html)
+
+table = soup.findAll('table')[0]
+
+rows = table.findAll('tr')
+rows.pop(0) # Remove header row
+
+categories = []
+hosts = []
+hostmap = {}
+for row in rows:
+  columns = row.findAll('td')
+  if not columns:
+    continue  # skip empty rows
+  categories.append( columns[0].text)
+  hosts.append(columns[1].text)
+  hostmap[columns[1].text.split()[0]] = columns[0].text
+
+#print set(categories)
+#[u'Menntastofnun', u'Verslun', u'R&iacute;kisstofnun', u'Vatn og rafmagn', u'Sveitarf&eacute;lag', u'Heilbrig&eth;isgeirinn', u'Anna&eth;', u'Bankar', u'B&iacute;lasala', u'Tryggingaf&eacute;lag', u'&THORN;j&oacute;nustua&eth;ili', u'Fj&ouml;lmi&eth;ill', u'Ol&iacute;uf&eacute;lag']
+
+groups = {}
+groups['Fj&ouml;lmi&eth;ill'] = 'media'
+groups['Menntastofnun'] = 'educational'
+groups['B&iacute;lasala'] = 'carsales'
+groups['Anna&eth;'] = 'misc'
+groups['Verslun'] = 'commercial'
+groups['Tryggingaf&eacute;lag'] = 'insurance'
+groups['Heilbrig&eth;isgeirinn'] = 'healthcare'
+groups['Bankar'] = 'banks'
+groups['R&iacute;kisstofnun'] = 'goverment'
+groups['&THORN;j&oacute;nustua&eth;ili'] = 'it-services'
+groups['Vatn og rafmagn'] = 'water-electricity'
+groups['Sveitarf&eacute;lag'] = 'municipals'
+groups['Ol&iacute;uf&eacute;lag'] = 'oil-companies'
+
+
+
+okconfig.addgroup
+
+host_names = map(lambda x: x.host_name, pynag.Model.Host.objects.all)
+all_hosts = pynag.Model.Host.objects.all
+
+for k,v in hostmap.items():
+  if v not in groups:
+    print "where is ", v
+    continue
+  group_name = groups[v]
+  host = pynag.Utils.grep(all_hosts, host_name=k)
+  if len(host) == 0:  
+    try:
+      okconfig.addhost(host_name=k,group_name=group_name,templates=['http'])
+    except Exception, e:
+      print "error adding %s: %s" % (k, e)
+  else:
+    # host already exists
+    print "adding", k, "to", group_name
+    myhost = host[0]
+    myhost.add_to_hostgroup(group_name)
+    myhost.save()
+

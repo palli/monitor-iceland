@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+import requests
+from pynag.Plugins import PluginHelper, ok, warning, critical, unknown
+helper = PluginHelper()
+
+default_url = "http://status.adagios.org/graphite/render?target=exchangerates.*.value&from=-120minutes&rawData=true"
+
+# Optionally specify some arguments
+helper.parser.add_option("-u", help="graphite url", dest="url",default=default_url)
+helper.parse_arguments()
+
+data = requests.get(helper.options.url).content
+metrics = data.splitlines()
+
+for line in metrics:
+  if line.count('|') != 1:
+    helper.exit(unknown, 'Invalid data received from graphite', line)
+  header,values = line.split('|')
+  if header.count(',') < 1:
+    helper.exit(unknown, 'Invalid header received from graphite', header)
+  metric_name = header.split(',')[0]
+  
+  # we get values as a comma seperated list
+  values = values.split(',')
+  
+  if not values:
+    helper.exit(critical, 'No values receieved for %s' % (metric_name, line))
+  last_value = values[-1]
+  if last_value in (None,'','None'):
+    helper.exit(unknown, "no datapoint received for metric %s" % metric_name, data)
+  
+  # Add new metric
+  helper.add_metric(metric_name, last_value)
+    
+
+
+# Check logic starts here
+helper.status(ok)
+helper.add_summary("%s metrics collected" % len(metrics))
+helper.add_metric("number_of_metrics", len(metrics))
+
+# Exit boilerplate
+helper.check_all_metrics()
+helper.exit()

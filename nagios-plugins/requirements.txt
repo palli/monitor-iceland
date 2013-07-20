@@ -1,0 +1,6 @@
+python-numpy
+python-requests
+python-BeautifulSoup
+python-simplejson
+pynag
+
