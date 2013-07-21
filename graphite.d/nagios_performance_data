@@ -1,0 +1,26 @@
+#!/usr/bin/python
+# get all nagios performance data and print out in a graphite style
+
+import pynag.Parsers
+import pynag.Utils
+l = pynag.Parsers.mk_livestatus()
+services = l.get_services('Columns: perf_data last_check host_name description')
+#hosts = l.get_hosts()
+
+# Prefix all graphite metrics with this namespace
+prefix = 'nagios.'
+for i in services:
+  perfdatastring = i.get('perf_data')
+  perfdata = pynag.Utils.PerfData(perfdatastring)
+  
+  timestamp = i.get('last_check')
+  host_name = i.get('host_name').replace(' ','_').replace('/','_').replace('.','_')
+  description = i.get('description').replace(' ','_').replace('/','_').replace('.','_')
+  graphite_name = '%s%s.%s' % (prefix,host_name,description)
+  for metric in perfdata.metrics:
+    label = metric.label.replace(' ','_').replace('/','_').replace('.','_')
+    value = metric.value
+    if value in (None,''):
+      continue
+    print "%s.%s %s %s" %(graphite_name, label, value, timestamp)
+
