@@ -62,7 +62,7 @@ for i in html.split('\n'):
     print 'vegagerdin.%s.max_wind %s %d' % (name, max_wind.strip('%'), now) 
     print 'vegagerdin.%s.traffic_last_10_minutes %s %d' % (name, traffic_last_10_minutes, now) 
     print 'vegagerdin.%s.traffic_today %s %d' % (name, traffic_today, now) 
-    print 'vegagerdin.%s.temperature %s %d' % (name, temperature_at_road, now) 
+    print 'vegagerdin.%s.temperature %s %d' % (name, temperature, now) 
     print 'vegagerdin.%s.temperature_at_road %s %d' % (name, temperature_at_road, now) 
     print 'vegagerdin.%s.humidity %s %d' % (name, humidity.strip('%'), now) 
     
