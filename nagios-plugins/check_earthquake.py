@@ -18,6 +18,7 @@ sys.setdefaultencoding('utf-8')
 
 helper = PluginHelper()
 helper.parse_arguments()
+helper.show_legacy = True
 
 now = time.time()
 url =  'http://hraun.vedur.is/ja/skjalftar/skjlisti.html'
