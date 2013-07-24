@@ -51,7 +51,7 @@ for i in html.split('\n'):
   date = i[45:51].strip()
   time = i[51:57].strip()
   direction = i[57:61].strip()
-  average_wind = i[61:64].strip()
+  average_wind = i[62:64].strip()
   max_wind = i[64:68].strip().strip('(').strip(')').strip()
   air_temperature =  i[69:78].strip()
   road_temperature =  i[78:81].strip()
