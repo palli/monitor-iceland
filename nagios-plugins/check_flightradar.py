@@ -20,10 +20,6 @@ html = html.replace(");",'')
 json_data = json.loads(html)
 flights = json_data.values()
 
-for i in flights:
-  #print i
-  #print "..."
-  pass
 p.add_metric('total_airplanes', len(flights), warn="0..1")
 p.add_summary('%s airplanes are currently in the air above iceland' % (len(flights)))
   
