@@ -2,10 +2,7 @@
 # Checks one or more nagios services via mk livestatus
 # And returns availability numbers via perfdata
 
-import re
-import requests
 from pynag.Parsers import mk_livestatus
-from pynag.Utils import PerfData
 from pynag.Plugins import PluginHelper, ok, warning, critical, unknown
 
 helper = PluginHelper()
@@ -52,7 +49,11 @@ helper.add_metric("services_critical", states[2])
 helper.add_metric("services_unknown", states[3])
 helper.add_metric("services_total", states['all'])
 
-# 
+# If no services were found, return status unknown
+if not states['all']:
+    helper.status(unknown)
+    helper.exit()
+
 availability = states[0] / float(states['all']) * 100
 availability = '%.2f' % availability
 helper.add_metric("service_availability", availability,uom='%')
