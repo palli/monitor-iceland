@@ -3,21 +3,24 @@
 # And returns availability numbers via perfdata
 
 import re
-import requests
 from pynag.Parsers import mk_livestatus
-from pynag.Utils import PerfData
 from pynag.Plugins import PluginHelper, ok, warning, critical, unknown
 
+
+# Location of nagios.cfg. If it is set to None,
+# then pynag will try to find it by itself
+nagios_cfg_file = None
 helper = PluginHelper()
 
 
 # Optionally specify some arguments
 helper.parser.add_option("--service", help="Regex for the metric in the form of hostname,service description", dest="services",default=[], action="append")
+helper.parser.add_option("--cfg_file", help="Path to your nagios.cfg. By default, try to auto-detect", dest="cfg_file",default=nagios_cfg_file)
 helper.parser.add_option("--show-metrics-in-perfdata", help="Print every metric as a perfdata", dest="show_all_perfdata",default=False, action="store_true")
 helper.parser.add_option("--show-metrics-in-long", help="Print every metric to long_output", dest="metrics_to_long_output",default=False, action="store_true")
 helper.parse_arguments()
 
-livestatus = mk_livestatus()
+livestatus = mk_livestatus(nagios_cfg_file=helper.options.cfg_file)
 
 # Get the perfdata for all services
 livestatus_results = livestatus.get_services('Columns: host_name description state')
@@ -52,7 +55,11 @@ helper.add_metric("services_critical", states[2])
 helper.add_metric("services_unknown", states[3])
 helper.add_metric("services_total", states['all'])
 
-# 
+# If no services were found, return status unknown
+if not states['all']:
+    helper.status(unknown)
+    helper.exit()
+
 availability = states[0] / float(states['all']) * 100
 availability = '%.2f' % availability
 helper.add_metric("service_availability", availability,uom='%')
