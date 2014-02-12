@@ -49,11 +49,16 @@ def check_many_dns_servers():
         time.label = "%stime" % (i)
         response_times.append(float(time.value))
         helper._perfdata.metrics.append(time)
-    helper.add_summary("%s out of %s nameservers are responding" % (len(response_times), len(nameservers)))
-    helper.add_metric('working nameservers', len(response_times), max=len(nameservers), warn=str(len(nameservers)), crit='0..inf')
+    total = len(nameservers)
+    working = len(response_times)
+    helper.add_summary("%s out of %s nameservers are responding" % (working, total))
+
+    warn_threshold = "inf..%s" % max(0, total-1)
+    crit_threshold = "inf..0"
+    helper.add_metric('working nameservers', working, max=total, warn=warn_threshold, crit=crit_threshold )
     if not response_times:
         return
-    
+
     average_response_time = sum(response_times) / len(response_times)
     helper.add_metric('average response time', average_response_time, uom='s')
     helper.add_metric('highest response time', max(response_times), uom='s', warn="1..inf", crit="2..inf")
