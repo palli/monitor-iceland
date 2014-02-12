@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # A plugin to check gamma radiation levels in Iceland
 # It fetches eurdep messages from opid-ftp.gr.is
-# Ýou need to have eurdep module installed (pip install eurdep)
+# You need to have eurdep module installed (pip install eurdep)
 
 import sys
 from ftplib import FTP
