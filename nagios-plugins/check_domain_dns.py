@@ -38,7 +38,7 @@ def check_many_dns_servers():
         pluginoutput = check_dns(i)
         exit_code = pluginoutput.exit_code
         friendly_code = pynag.Plugins.state_text.get(exit_code, 'Unknown')
-        helper.status(pynag.Plugins.state.get(exit_code, 2))
+        helper.status(pynag.Plugins.state.get(min(exit_code, 2)))
         helper.add_long_output("")
         helper.add_long_output("Checking %s: " % i)
         helper.add_long_output("* Exit code: %s (status=%s)" % (exit_code, friendly_code))
