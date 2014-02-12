@@ -7,14 +7,14 @@ __author__ = 'palli'
 import dns.resolver
 
 
-def check_dns(host_name, expected_address=None, expect_authority=False):
+def check_dns(host_name, server, expected_address=None, expect_authority=False):
     """ Check one specific dns server (wrapper around nagios plugin check_dns)
 
     Returns a pynag.Utils.PluginOutput instance
     """
     if not expected_address:
         expected_address = socket.gethostbyname(host_name)
-    check_command = "/usr/lib64/nagios/plugins/check_dns -H '{host_name}' -A '{expected_address}'".format(**locals())
+    check_command = "/usr/lib64/nagios/plugins/check_dns -A -H '{host_name}' -s {server} -a '{expected_address}'".format(**locals())
     code, stdout, stderr = pynag.Utils.runCommand(check_command)
     output = pynag.Utils.PluginOutput(stdout)
     output.exit_code = code
@@ -35,7 +35,7 @@ def check_many_dns_servers():
     nameservers = map(lambda x: str(x), nameservers)
     response_times = []
     for i in nameservers:
-        pluginoutput = check_dns(i)
+        pluginoutput = check_dns(helper.options.domain, i)
         exit_code = pluginoutput.exit_code
         friendly_code = pynag.Plugins.state_text.get(exit_code, 'Unknown')
         helper.status(pynag.Plugins.state.get(min(exit_code, 2)))
