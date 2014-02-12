@@ -61,7 +61,7 @@ def check_many_dns_servers():
 
     average_response_time = sum(response_times) / len(response_times)
     helper.add_metric('average response time', average_response_time, uom='s')
-    helper.add_metric('highest response time', max(response_times), uom='s', warn="1..inf", crit="2..inf")
+    helper.add_metric('highest response time', max(response_times), uom='s', warn="2..inf", crit="3..inf")
 
 
 helper = pynag.Plugins.PluginHelper()
