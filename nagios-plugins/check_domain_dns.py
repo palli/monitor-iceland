@@ -53,6 +53,8 @@ def check_many_dns_servers():
     helper.add_metric('working nameservers', len(response_times), max=len(nameservers), warn=str(len(nameservers)), crit='0..inf')
     if not response_times:
         return
+    
+    average_response_time = sum(response_times) / len(response_times)
     helper.add_metric('average response time', average_response_time, uom='s')
     helper.add_metric('highest response time', max(response_times), uom='s', warn="1..inf", crit="2..inf")
 
